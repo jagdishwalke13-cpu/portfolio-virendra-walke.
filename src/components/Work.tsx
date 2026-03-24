@@ -54,30 +54,26 @@ const Work = () => {
   const dragStartPos = useRef(0);
   const startTranslate = useRef(0);
 
-  const updateCarousel = (index: number) => {
-    if (!carouselRef.current) return;
+  // Helper to get card width
+  const getCardWidth = () => {
+    if (!carouselRef.current) return 0;
     const cards = carouselRef.current.children;
-    if (cards.length === 0) return;
-    
+    if (cards.length === 0) return 0;
     const card = cards[0] as HTMLElement;
-    const cardWidth = card.offsetWidth + parseInt(window.getComputedStyle(card).marginRight);
-    setTranslateX(index * -cardWidth);
-    setCurrentIndex(index);
+    return card.offsetWidth + parseInt(window.getComputedStyle(card).marginRight);
   };
 
   const nextSlide = () => {
-    const nextIndex = (currentIndex + 1) % projects.length;
-    updateCarousel(nextIndex);
+    setCurrentIndex((prev) => (prev + 1) % projects.length);
   };
 
   const prevSlide = () => {
-    const prevIndex = (currentIndex - 1 + projects.length) % projects.length;
-    updateCarousel(prevIndex);
+    setCurrentIndex((prev) => (prev - 1 + projects.length) % projects.length);
   };
 
   const handleDragStart = (e: React.MouseEvent | React.TouchEvent) => {
     setIsDragging(true);
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
     dragStartPos.current = clientX;
     startTranslate.current = translateX;
     
@@ -88,9 +84,18 @@ const Work = () => {
 
   const handleDragMove = (e: React.MouseEvent | React.TouchEvent) => {
     if (!isDragging) return;
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
     const diff = clientX - dragStartPos.current;
-    setTranslateX(startTranslate.current + diff);
+    
+    // Boundary resistance (damping)
+    let newTranslate = startTranslate.current + diff;
+    const cardWidth = getCardWidth();
+    const minTranslate = (projects.length - 1) * -cardWidth;
+    
+    if (newTranslate > 0) newTranslate = diff * 0.3; // Damping at start
+    if (newTranslate < minTranslate) newTranslate = minTranslate + (newTranslate - minTranslate) * 0.3; // Damping at end
+    
+    setTranslateX(newTranslate);
   };
 
   const handleDragEnd = () => {
@@ -102,22 +107,38 @@ const Work = () => {
     }
 
     const movedBy = translateX - startTranslate.current;
+    const cardWidth = getCardWidth();
     
-    if (movedBy < -100 && currentIndex < projects.length - 1) {
-      updateCarousel(currentIndex + 1);
-    } else if (movedBy > 100 && currentIndex > 0) {
-      updateCarousel(currentIndex - 1);
+    // Threshold for swipe (1/4 of card width)
+    if (movedBy < -cardWidth / 4 && currentIndex < projects.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+    } else if (movedBy > cardWidth / 4 && currentIndex > 0) {
+      setCurrentIndex(currentIndex - 1);
     } else {
-      updateCarousel(currentIndex);
+      // Snap back to current index
+      setTranslateX(currentIndex * -cardWidth);
     }
   };
 
+  // Sync translateX with currentIndex
   useEffect(() => {
-    const handleResize = () => updateCarousel(currentIndex);
+    if (!isDragging) {
+      const cardWidth = getCardWidth();
+      setTranslateX(currentIndex * -cardWidth);
+    }
+  }, [currentIndex, isDragging]);
+
+  // Handle Resize
+  useEffect(() => {
+    const handleResize = () => {
+      const cardWidth = getCardWidth();
+      setTranslateX(currentIndex * -cardWidth);
+    };
     window.addEventListener('resize', handleResize);
-    updateCarousel(0); // Initial pos
+    // Initial calculation after mount to ensure offsetWidth is captured
+    setTimeout(handleResize, 100);
     return () => window.removeEventListener('resize', handleResize);
-  }, [currentIndex]);
+  }, []); // Only on mount
 
   return (
     <div className="work-section" id="work">
@@ -167,10 +188,10 @@ const Work = () => {
         </div>
 
         <div className="nav-controls-work">
-          <button className="nav-btn-work prev" onClick={prevSlide}>
+          <button className="nav-btn-work prev" onClick={prevSlide} aria-label="Previous Slide">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
           </button>
-          <button className="nav-btn-work next" onClick={nextSlide}>
+          <button className="nav-btn-work next" onClick={nextSlide} aria-label="Next Slide">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
           </button>
         </div>
@@ -180,7 +201,7 @@ const Work = () => {
             <div 
               key={index} 
               className={`dot-work ${index === currentIndex ? 'active' : ''}`}
-              onClick={() => updateCarousel(index)}
+              onClick={() => setCurrentIndex(index)}
             ></div>
           ))}
         </div>
