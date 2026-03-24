@@ -149,6 +149,8 @@ const Work = () => {
         </h2>
       </div>
 
+      <div className="work-glass-overlay"></div>
+
       <div className="carousel-container-work">
         <div 
           className="carousel-wrapper-work" 
