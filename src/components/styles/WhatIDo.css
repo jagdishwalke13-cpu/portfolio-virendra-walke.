@@ -1,0 +1,110 @@
+.whatIDO {
+  padding: 80px 0;
+  position: relative;
+  z-index: 2;
+}
+.whatido-heading {
+  font-size: 70px;
+  font-weight: 500;
+  margin-bottom: 50px;
+}
+.whatido-heading span {
+  color: var(--accentColor);
+}
+
+/* Services Grid */
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+}
+
+/* Service Card */
+.service-card {
+  background: rgba(11, 8, 12, 0.45);
+  -webkit-backdrop-filter: blur(15px);
+  backdrop-filter: blur(15px);
+  will-change: transform;
+  transform: translateZ(0);
+  border: 1px solid rgba(194, 164, 255, 0.12);
+  border-radius: 16px;
+  padding: 36px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: transform 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
+}
+.service-card:hover {
+  transform: translateY(-6px);
+  border-color: var(--accentColor);
+  box-shadow: 0 8px 30px rgba(194, 164, 255, 0.18);
+}
+
+.service-icon {
+  font-size: 48px;
+  line-height: 1;
+}
+.service-title {
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0;
+  color: #eae5ec;
+}
+.service-description {
+  font-size: 14px;
+  font-weight: 300;
+  color: #adacac;
+  margin: 0;
+  line-height: 1.7;
+  flex: 1;
+}
+
+/* Skill Pills */
+.service-skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.skill-pill {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--accentColor);
+  border: 1px solid rgba(194, 164, 255, 0.3);
+  border-radius: 20px;
+  padding: 4px 14px;
+  white-space: nowrap;
+  transition: background 0.25s ease, border-color 0.25s ease;
+}
+.service-card:hover .skill-pill {
+  border-color: var(--accentColor);
+  background: rgba(194, 164, 255, 0.08);
+}
+
+/* Responsive */
+@media only screen and (max-width: 1024px) {
+  .whatido-heading {
+    font-size: 50px;
+    margin-bottom: 30px;
+  }
+  .services-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media only screen and (max-width: 600px) {
+  .whatIDO {
+    padding: 50px 0;
+  }
+  .whatido-heading {
+    font-size: 40px;
+    margin-bottom: 24px;
+  }
+  .services-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  .service-card {
+    padding: 28px 22px;
+  }
+}
