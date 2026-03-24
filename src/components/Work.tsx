@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect } from "react";
 import "./styles/Work.css";
 
 const projects = [
@@ -45,34 +46,142 @@ const projects = [
   },
 ];
 
-// Duplicate for infinite loop
-const allProjects = [...projects, ...projects];
-
 const Work = () => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [translateX, setTranslateX] = useState(0);
+  const carouselRef = useRef<HTMLDivElement>(null);
+  const dragStartPos = useRef(0);
+  const startTranslate = useRef(0);
+
+  const updateCarousel = (index: number) => {
+    if (!carouselRef.current) return;
+    const cards = carouselRef.current.children;
+    if (cards.length === 0) return;
+    
+    const card = cards[0] as HTMLElement;
+    const cardWidth = card.offsetWidth + parseInt(window.getComputedStyle(card).marginRight);
+    setTranslateX(index * -cardWidth);
+    setCurrentIndex(index);
+  };
+
+  const nextSlide = () => {
+    const nextIndex = (currentIndex + 1) % projects.length;
+    updateCarousel(nextIndex);
+  };
+
+  const prevSlide = () => {
+    const prevIndex = (currentIndex - 1 + projects.length) % projects.length;
+    updateCarousel(prevIndex);
+  };
+
+  const handleDragStart = (e: React.MouseEvent | React.TouchEvent) => {
+    setIsDragging(true);
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    dragStartPos.current = clientX;
+    startTranslate.current = translateX;
+    
+    if (carouselRef.current) {
+      carouselRef.current.style.transition = 'none';
+    }
+  };
+
+  const handleDragMove = (e: React.MouseEvent | React.TouchEvent) => {
+    if (!isDragging) return;
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const diff = clientX - dragStartPos.current;
+    setTranslateX(startTranslate.current + diff);
+  };
+
+  const handleDragEnd = () => {
+    if (!isDragging) return;
+    setIsDragging(false);
+    
+    if (carouselRef.current) {
+      carouselRef.current.style.transition = 'transform 0.8s cubic-bezier(0.23, 1, 0.32, 1)';
+    }
+
+    const movedBy = translateX - startTranslate.current;
+    
+    if (movedBy < -100 && currentIndex < projects.length - 1) {
+      updateCarousel(currentIndex + 1);
+    } else if (movedBy > 100 && currentIndex > 0) {
+      updateCarousel(currentIndex - 1);
+    } else {
+      updateCarousel(currentIndex);
+    }
+  };
+
+  useEffect(() => {
+    const handleResize = () => updateCarousel(currentIndex);
+    window.addEventListener('resize', handleResize);
+    updateCarousel(0); // Initial pos
+    return () => window.removeEventListener('resize', handleResize);
+  }, [currentIndex]);
+
   return (
     <div className="work-section" id="work">
+      <div className="glow-bg-work"></div>
       <div className="work-header section-container">
         <h2>
           My <span>Work</span>
         </h2>
       </div>
-      <div className="projects-wrapper">
-        <div className="projects-track">
-          {allProjects.map((project, index) => (
-            <div className="project-card" key={index}>
-              <div className="project-num">{project.num}</div>
-              <h3 className="project-name">{project.name}</h3>
-              <p className="project-category">{project.category}</p>
-              <div className="project-divider"></div>
-              <div className="project-detail">
-                <h4>Tools & Tech</h4>
-                <p>{project.tools}</p>
-              </div>
-              <div className="project-detail">
-                <h4>Result</h4>
-                <p>{project.result}</p>
+
+      <div className="carousel-container-work">
+        <div 
+          className="carousel-wrapper-work" 
+          ref={carouselRef}
+          style={{ transform: `translateX(${translateX}px)` }}
+          onMouseDown={handleDragStart}
+          onTouchStart={handleDragStart}
+          onMouseMove={handleDragMove}
+          onTouchMove={handleDragMove}
+          onMouseUp={handleDragEnd}
+          onTouchEnd={handleDragEnd}
+          onMouseLeave={handleDragEnd}
+        >
+          {projects.map((project, index) => (
+            <div 
+              className={`carousel-card-work ${index === currentIndex ? 'active' : ''}`} 
+              key={index}
+            >
+              <div className="card-inner-work">
+                <div className="card-glow-border-work"></div>
+                <div className="card-number-work">{project.num}</div>
+                <div className="card-content-work">
+                  <div className="category-tag-work">{project.category}</div>
+                  <h3 className="card-title-work">{project.name}</h3>
+                  <div className="section-work">
+                    <h4 className="section-label-work">Tools & Tech</h4>
+                    <p className="section-text-work">{project.tools}</p>
+                  </div>
+                  <div className="section-work">
+                    <h4 className="section-label-work">Result</h4>
+                    <p className="section-text-work">{project.result}</p>
+                  </div>
+                </div>
               </div>
             </div>
+          ))}
+        </div>
+
+        <div className="nav-controls-work">
+          <button className="nav-btn-work prev" onClick={prevSlide}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          </button>
+          <button className="nav-btn-work next" onClick={nextSlide}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </button>
+        </div>
+
+        <div className="dots-container-work">
+          {projects.map((_, index) => (
+            <div 
+              key={index} 
+              className={`dot-work ${index === currentIndex ? 'active' : ''}`}
+              onClick={() => updateCarousel(index)}
+            ></div>
           ))}
         </div>
       </div>
